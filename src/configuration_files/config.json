@@ -5,7 +5,8 @@
     "dataSource": {
         "description": "streamed data or data from file",
         "type": "maybe delete this",
-        "path": "../data/put path here",
+        "bessPath": "../data/BESS/ZHPESS232A230002",
+        "smartMetersPath":"../data/meter/m1",
         "delimiter": ",",
         "thousandSeparator":"",
         "decimalSeparator":".",

@@ -25,6 +25,15 @@ sys.path.append(os.path.abspath(
 #Import critical data, must be after root directory
 from configuration_files.config_file_loader import config_data
 
+#Create 'logs' directory if it doesn't exist
+log_dir = os.path.join(os.path.dirname(__file__), "logs")
+os.makedirs(log_dir, exist_ok=True)
+
+#Generate log file path inside 'logs' directory
+log_file = os.path.join(
+    log_dir, datetime.datetime.now().strftime("maxxWattLog_%Y-%m-%dT%H-%M-%S.log")
+)
+
 #Logs will be written to stdout and to a file based on the date and time
 #Define a custom logger to avoid debug message spam
 log_handler= logging.getLogger("log handler")
@@ -35,7 +44,6 @@ log_format = logging.Formatter(
 )
 
 #File handler
-log_file = datetime.datetime.now().strftime("maxxWattLog_%Y-%m-%dT%H-%M-%S.log")
 file_handler = logging.FileHandler(log_file)
 file_handler.setFormatter(log_format)
 log_handler.addHandler(file_handler)
@@ -44,7 +52,7 @@ log_handler.addHandler(file_handler)
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(log_format)
 log_handler.addHandler(console_handler)
-log_handler.critical(f"Log are written to '{log_file}'")
+log_handler.critical(f"Logs are written to '{log_file}'")
 
 log_level = config_data["general"]["loggingLevel"].upper()
 if log_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
