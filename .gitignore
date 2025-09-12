@@ -4,8 +4,9 @@ __pycache__/
 *$py.class
 
 #local
-data/*
-src/provided_scripts/*
+/data/
+/src/provided_scripts/
+/logs/
 
 # C extensions
 *.so

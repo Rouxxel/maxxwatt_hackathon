@@ -26,7 +26,7 @@ sys.path.append(os.path.abspath(
 from configuration_files.config_file_loader import config_data
 
 #Create 'logs' directory if it doesn't exist
-log_dir = os.path.join(os.path.dirname(__file__), "logs")
+log_dir = os.path.join(os.path.dirname(__file__), "../../logs")
 os.makedirs(log_dir, exist_ok=True)
 
 #Generate log file path inside 'logs' directory

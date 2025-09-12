@@ -14,6 +14,7 @@ and extracting critical data for proper execution of other modules
 
 import json
 import sys
+import os
 
 def read_data_from_json(file_path, exit_on_error=True):
     """
@@ -41,7 +42,7 @@ def read_data_from_json(file_path, exit_on_error=True):
             return None
 
 #Config file to get the configuration of the system
-config_file_path = "put here config path" #TODO: 
+config_file_path = os.path.join(os.path.dirname(__file__), "config.json")
 #Read the configuration data from the config file and adjust the loglevel
 config_data = read_data_from_json(config_file_path, exit_on_error=True)
 
