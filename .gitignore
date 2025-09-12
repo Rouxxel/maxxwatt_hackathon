@@ -7,6 +7,7 @@ __pycache__/
 /data/
 /src/provided_scripts/
 /logs/
+/test_results/
 
 # C extensions
 *.so
