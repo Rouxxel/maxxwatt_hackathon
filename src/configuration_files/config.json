@@ -1,0 +1,19 @@
+{
+    "general": {
+        "loggingLevel": "debug"
+    },
+    "dataSource": {
+        "description": "streamed data or data from file",
+        "type": "maybe delete this",
+        "path": "../data/put path here",
+        "delimiter": ",",
+        "thousandSeparator":"",
+        "decimalSeparator":".",
+        "commentCharacter": "#",
+        "chunkSize": "maybe delete, if not, enter int",
+        "pauseBetweenChunks.s" : 1
+    },    
+    "plotAndCsv":{
+        "create.sss":false
+    }
+}
