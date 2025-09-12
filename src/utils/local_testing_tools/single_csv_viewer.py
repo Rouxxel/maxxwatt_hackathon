@@ -11,7 +11,6 @@ This module provides a class for doing an EDA on the provided .csv file by ...
 
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 import pandas as pd
@@ -110,6 +109,7 @@ class SingleFileEdaTesting:
             
             plot_file = os.path.join(results_dir, os.path.basename(file_path).replace(".csv", "_plot.png"))
             plt.savefig(plot_file)
+            plt.show()
             plt.close()
             log_handler.info(f"csv_eda() Plot saved as: {plot_file}")
             
