@@ -1,0 +1,50 @@
+default:
+  image: python:3.12.2
+  before_script:
+  tags:
+    - APPENZELLER
+
+stages:
+  - test
+  - build
+  - documentation  
+
+variables:
+  http_proxy: $CODE_PROXY
+  https_proxy: $CODE_PROXY
+  no_proxy: $CODE_NO_PROXY
+
+format:
+  stage: test
+  before_script:
+    - pip install --upgrade black
+    - pip install --upgrade black[jupyter]
+  script:
+    - black --line-length 120 --verbose spindle_force/.
+
+lint:
+  stage: test
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install -r requirements.txt
+    - pip install --upgrade pylint
+  script:
+    - pylint --disable=C0303,logging-format-interpolation,logging-fstring-interpolation,unspecified-encoding,wrong-import-position,broad-exception-caught --max-line-length=120 --recursive=y spindle_force/*
+
+build:  
+  stage: build
+  script: 
+    - python setup.py build  
+
+doc:
+  stage: documentation
+  before_script:
+    - apt-get update && apt-get install -y doxygen
+    - pip install --upgrade doxypypy
+  script:
+    - doxygen doxygen/doxygen_config
+    - mv doxygen/documentation/html public
+  artifacts:
+    paths:
+      - public
