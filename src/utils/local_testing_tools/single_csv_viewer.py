@@ -11,6 +11,7 @@ This module provides a class for doing an EDA on the provided .csv file by ...
 
 """
 
+from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 import pandas as pd
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     
     # Path to your CSV file (update this to an actual CSV you have)
     test_csv_path = os.path.abspath(os.path.join(
-        os.path.dirname(__file__), "C:/Users/Acer/Documents/GitHub/maxxwatt_backend_hackathon/data/BESS/ZHPESS232A230002/ac1_outside_t.csv"
+        os.path.dirname(__file__), "../../../data/BESS/ZHPESS232A230002/ac1_outside_t.csv"
     ))
 
     # Run csv_eda
