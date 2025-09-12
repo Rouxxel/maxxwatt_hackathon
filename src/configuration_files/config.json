@@ -8,7 +8,7 @@
         "bessPath": "../data/BESS/ZHPESS232A230002",
         "smartMetersPath":"../data/meter/m1",
         "delimiter": ",",
-        "thousandSeparator":"",
+        "thousandSeparator":" ",
         "decimalSeparator":".",
         "commentCharacter": "#",
         "chunkSize": "maybe delete, if not, enter int",
