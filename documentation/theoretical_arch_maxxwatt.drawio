@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.9 Chrome/134.0.6998.205 Electron/35.4.0 Safari/537.36" version="27.0.9">
   <diagram id="Y-wKTUxhbntM-42to69_" name="Page-1">
-    <mxGraphModel dx="2904" dy="1984" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="none" math="0" shadow="0">
+    <mxGraphModel dx="764" dy="522" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="none" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -73,8 +73,13 @@
         <mxCell id="5ADZpt155D_v8VnB1yTr-19" value="BMS" style="image;aspect=fixed;perimeter=ellipsePerimeter;html=1;align=center;shadow=0;dashed=0;fontColor=#F3F3F3;labelBackgroundColor=default;fontSize=12;spacingTop=3;image=img/lib/ibm/users/sensor.svg;" vertex="1" parent="1">
           <mxGeometry x="530" y="585" width="40" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="5ADZpt155D_v8VnB1yTr-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="5ADZpt155D_v8VnB1yTr-21" target="5ADZpt155D_v8VnB1yTr-42">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="5ADZpt155D_v8VnB1yTr-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=2;fillColor=#f0a30a;strokeColor=light-dark(#BD7000,#C2932E);" edge="1" parent="1" source="5ADZpt155D_v8VnB1yTr-21" target="5ADZpt155D_v8VnB1yTr-42">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610" y="680" />
+              <mxPoint x="639" y="680" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="5ADZpt155D_v8VnB1yTr-21" value="PCS" style="image;aspect=fixed;perimeter=ellipsePerimeter;html=1;align=center;shadow=0;dashed=0;fontColor=#F3F3F3;labelBackgroundColor=default;fontSize=12;spacingTop=3;image=img/lib/ibm/users/sensor.svg;" vertex="1" parent="1">
           <mxGeometry x="590" y="601" width="40" height="40" as="geometry" />
