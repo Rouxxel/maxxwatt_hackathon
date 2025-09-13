@@ -12,7 +12,6 @@ This module provides a class for doing an EDA on the provided .csv file by ...
 """
 
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import pandas as pd
 import sys
 import os
@@ -33,41 +32,6 @@ class SingleFileEdaTesting:
         #TODO: determine if necessary self._variable = x
         pass
     
-    def _parse_date_range(self, date_str, is_start=True):
-        """
-        Parse a partial date string (YYYY, YYYY-MM, YYYY-MM-DD) into a concrete datetime.
-        If is_start=True -> beginning of that period
-        If is_start=False -> end of that period
-        """
-        try:
-            parts = date_str.split("-")
-            if len(parts) == 1:  # YYYY
-                year = int(parts[0])
-                if is_start:
-                    return pd.Timestamp(year=year, month=1, day=1)
-                else:
-                    return pd.Timestamp(year=year, month=12, day=31, hour=23, minute=59, second=59)
-
-            elif len(parts) == 2:  # YYYY-MM
-                year, month = int(parts[0]), int(parts[1])
-                if is_start:
-                    return pd.Timestamp(year=year, month=month, day=1)
-                else:
-                    return (pd.Timestamp(year=year, month=month, day=1) + MonthEnd(1)).replace(
-                        hour=23, minute=59, second=59
-                    )
-
-            elif len(parts) == 3:  # YYYY-MM-DD
-                year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
-                if is_start:
-                    return pd.Timestamp(year=year, month=month, day=day)
-                else:
-                    return pd.Timestamp(year=year, month=month, day=day, hour=23, minute=59, second=59)
-            else:
-                raise ValueError(f"Invalid date format: {date_str}")
-        except Exception as e:
-            raise ValueError(f"Failed to parse date string '{date_str}': {e}")
-
     def csv_eda(self,
                 file_path, 
                 delimiter=config_data["dataSource"]["delimiter"],
@@ -105,8 +69,6 @@ class SingleFileEdaTesting:
                 thousands=thousand_separator,
                 comment=comment_char,
                 parse_dates=['ts'],  # Parse timestamp column
-                start=None,
-                end=None,
             )
             log_handler.info(f"csv_eda() Loaded CSV file: {file_path}")
             log_handler.info(f"csv_eda() Number of rows: {len(df)}, columns: {df.columns.tolist()}")
@@ -170,7 +132,7 @@ if __name__ == "__main__":
     
     # Path to your CSV file (update this to an actual CSV you have)
     test_csv_path = os.path.abspath(os.path.join(
-        os.path.dirname(__file__), "../../../data/BESS/ZHPESS232A230002/ac1_outside_t.csv"
+        os.path.dirname(__file__), "../../../data/BESS/ZHPESS232A230002/bms1_p1_t7.csv"
     ))
 
     # Run csv_eda
