@@ -32,6 +32,41 @@ class SingleFileEdaTesting:
     def __init__(self):
         #TODO: determine if necessary self._variable = x
         pass
+    
+    def _parse_date_range(self, date_str, is_start=True):
+        """
+        Parse a partial date string (YYYY, YYYY-MM, YYYY-MM-DD) into a concrete datetime.
+        If is_start=True -> beginning of that period
+        If is_start=False -> end of that period
+        """
+        try:
+            parts = date_str.split("-")
+            if len(parts) == 1:  # YYYY
+                year = int(parts[0])
+                if is_start:
+                    return pd.Timestamp(year=year, month=1, day=1)
+                else:
+                    return pd.Timestamp(year=year, month=12, day=31, hour=23, minute=59, second=59)
+
+            elif len(parts) == 2:  # YYYY-MM
+                year, month = int(parts[0]), int(parts[1])
+                if is_start:
+                    return pd.Timestamp(year=year, month=month, day=1)
+                else:
+                    return (pd.Timestamp(year=year, month=month, day=1) + MonthEnd(1)).replace(
+                        hour=23, minute=59, second=59
+                    )
+
+            elif len(parts) == 3:  # YYYY-MM-DD
+                year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+                if is_start:
+                    return pd.Timestamp(year=year, month=month, day=day)
+                else:
+                    return pd.Timestamp(year=year, month=month, day=day, hour=23, minute=59, second=59)
+            else:
+                raise ValueError(f"Invalid date format: {date_str}")
+        except Exception as e:
+            raise ValueError(f"Failed to parse date string '{date_str}': {e}")
 
     def csv_eda(self,
                 file_path, 
@@ -69,7 +104,9 @@ class SingleFileEdaTesting:
                 decimal=decimal_separator,
                 thousands=thousand_separator,
                 comment=comment_char,
-                parse_dates=['ts']  # Parse timestamp column
+                parse_dates=['ts'],  # Parse timestamp column
+                start=None,
+                end=None,
             )
             log_handler.info(f"csv_eda() Loaded CSV file: {file_path}")
             log_handler.info(f"csv_eda() Number of rows: {len(df)}, columns: {df.columns.tolist()}")
