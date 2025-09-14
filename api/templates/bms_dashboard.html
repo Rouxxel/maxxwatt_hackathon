@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BESS Real-Time Dashboard - Multi-Layer BESS Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .connection-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin: 10px;
+        }
+        
+        .connected { background: rgba(76, 175, 80, 0.9); }
+        .disconnected { background: rgba(244, 67, 54, 0.9); }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .controls select, .controls input {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            background: white;
+            color: #333;
+        }
+        
+        .controls button {
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .controls button:hover {
+            background: #45a049;
+        }
+        
+        .controls button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            min-height: 120px;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #4CAF50;
+        }
+        
+        .metric-unit {
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+        
+        .timestamp {
+            text-align: center;
+            opacity: 0.7;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+        
+        .data-period-info {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .data-period-info h3 {
+            margin: 0 0 10px 0;
+            color: #4CAF50;
+            font-size: 1.2rem;
+        }
+        
+        .current-data-time {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #FFD700;
+            margin: 5px 0;
+        }
+        
+        .data-source-info {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin: 5px 0;
+        }
+        
+        .dashboard-layer {
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .layer-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .layer-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .layer-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .soc-chart-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px auto;
+            width: 80%;
+            max-width: 800px;
+            height: 340px; /* Fixed height: 300px chart + padding */
+        }
+        
+        .soc-chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 300px; /* Fixed 300px height */
+        }
+        
+        .chart-title {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        
+        .no-data {
+            opacity: 0.5;
+            color: #ccc;
+        }
+        
+        .logs {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>⚡ BESS Multi-Layer Dashboard</h1>
+            <p style="opacity: 0.8; margin-top: 10px;">Battery Energy Storage System - Real-Time Monitoring</p>
+            <div id="connectionStatus" class="connection-status disconnected">Disconnected</div>
+        </div>
+        
+        <div class="controls">
+            <select id="deviceSelect">
+                <option value="">Select Device</option>
+                <option value="ZHPESS232A230002">ZHPESS232A230002</option>
+                <option value="ZHPESS232A230003">ZHPESS232A230003</option>
+                <option value="ZHPESS232A230007">ZHPESS232A230007</option>
+            </select>
+            
+            <select id="dateSelect">
+                <option value="">Auto (Best Period)</option>
+                <option value="2023-09">September 2023</option>
+                <option value="2023-10">October 2023</option>
+                <option value="2023-11">November 2023</option>
+                <option value="2023-12">December 2023</option>
+                <option value="2024-01">January 2024</option>
+                <option value="2024-02">February 2024</option>
+                <option value="2024-03">March 2024</option>
+                <option value="2024-04">April 2024</option>
+                <option value="2024-05">May 2024</option>
+                <option value="2024-06">June 2024</option>
+                <option value="2024-07">July 2024</option>
+                <option value="2024-08">August 2024</option>
+                <option value="2024-09">September 2024</option>
+                <option value="2024-10">October 2024</option>
+                <option value="2024-11">November 2024</option>
+                <option value="2024-12">December 2024</option>
+                <option value="2025-01">January 2025</option>
+                <option value="2025-02">February 2025</option>
+                <option value="2025-03">March 2025</option>
+                <option value="2025-04">April 2025</option>
+                <option value="2025-05">May 2025</option>
+                <option value="2025-06">June 2025</option>
+            </select>
+            
+            <input type="number" id="intervalInput" value="2" min="0.5" max="10" step="0.5" placeholder="Interval (seconds)">
+            
+            <button id="startBtn" onclick="startStreaming()">Start Stream</button>
+            <button id="stopBtn" onclick="stopStreaming()" disabled>Stop Stream</button>
+        </div>
+        
+        <div class="data-period-info" id="dataPeriodInfo" style="display: none;">
+            <h3>📅 Current Data Period</h3>
+            <div class="current-data-time" id="currentDataTime">--</div>
+            <div class="data-source-info" id="dataSourceInfo">--</div>
+            <div class="data-source-info" id="targetPeriodInfo">--</div>
+        </div>
+        
+        <!-- SOC Cycle Chart -->
+        <div class="soc-chart-container">
+            <div class="chart-title">🔋 SOC Cycle Monitoring - Charge/Discharge Patterns</div>
+            <div class="soc-chart-wrapper">
+                <canvas id="socChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- TOP LAYER - KPIs for Operators/Managers -->
+        <div class="dashboard-layer">
+            <div class="layer-header">
+                <div class="layer-title">📊 TOP LAYER - Key Performance Indicators</div>
+                <div class="layer-subtitle">SOC, SOH, Power Status → Operator/Manager View</div>
+            </div>
+            <div class="metrics-grid">
+                <!-- BMS KPIs -->
+                <div class="metric-card" style="border-left: 4px solid #4CAF50;">
+                    <div class="metric-label">🔋 State of Charge (bms1_soc)</div>
+                    <div class="metric-value" id="bms_soc">--</div>
+                    <div class="metric-unit">%</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #4CAF50;">
+                    <div class="metric-label">🔋 State of Health (bms1_soh)</div>
+                    <div class="metric-value" id="bms_soh">--</div>
+                    <div class="metric-unit">%</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #4CAF50;">
+                    <div class="metric-label">🔋 Pack Voltage (bms1_v)</div>
+                    <div class="metric-value" id="bms_voltage">--</div>
+                    <div class="metric-unit">V</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #4CAF50;">
+                    <div class="metric-label">🔋 Pack Current (bms1_c)</div>
+                    <div class="metric-value" id="bms_current">--</div>
+                    <div class="metric-unit">A</div>
+                </div>
+                
+                <!-- PCS KPIs -->
+                <div class="metric-card" style="border-left: 4px solid #FF9800;">
+                    <div class="metric-label">⚡ Apparent Power (pcs1_ap)</div>
+                    <div class="metric-value" id="pcs_apparent_power">--</div>
+                    <div class="metric-unit">kW</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MID LAYER - Engineering View -->
+        <div class="dashboard-layer">
+            <div class="layer-header">
+                <div class="layer-title">🔧 MID LAYER - Engineering Monitoring</div>
+                <div class="layer-subtitle">Cell Balance, AC/DC Conversion, Thermal Status → Engineering View</div>
+            </div>
+            <div class="metrics-grid">
+                <!-- BMS Engineering Metrics -->
+                <div class="metric-card" style="border-left: 4px solid #4CAF50;">
+                    <div class="metric-label">🔋 Cell Avg Voltage (bms1_cell_ave_v)</div>
+                    <div class="metric-value" id="bms_cell_avg_voltage">--</div>
+                    <div class="metric-unit">V</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #4CAF50;">
+                    <div class="metric-label">🔋 Cell Avg Temp (bms1_cell_ave_t)</div>
+                    <div class="metric-value" id="bms_cell_avg_temp">--</div>
+                    <div class="metric-unit">°C</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #4CAF50;">
+                    <div class="metric-label">🔋 Cell Voltage Spread</div>
+                    <div class="metric-value" id="bms_cell_voltage_diff">--</div>
+                    <div class="metric-unit">mV</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #4CAF50;">
+                    <div class="metric-label">🔋 Cell Temp Spread</div>
+                    <div class="metric-value" id="bms_cell_temp_diff">--</div>
+                    <div class="metric-unit">°C</div>
+                </div>
+                
+                <!-- PCS Engineering Metrics -->
+                <div class="metric-card" style="border-left: 4px solid #FF9800;">
+                    <div class="metric-label">⚡ DC Current (pcs1_dcc)</div>
+                    <div class="metric-value" id="pcs_dc_current">--</div>
+                    <div class="metric-unit">A</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #FF9800;">
+                    <div class="metric-label">⚡ DC Voltage (pcs1_dcv)</div>
+                    <div class="metric-value" id="pcs_dc_voltage">--</div>
+                    <div class="metric-unit">V</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #FF9800;">
+                    <div class="metric-label">⚡ AC Current A (pcs1_ia)</div>
+                    <div class="metric-value" id="pcs_ac_current_a">--</div>
+                    <div class="metric-unit">A</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #FF9800;">
+                    <div class="metric-label">⚡ AC Voltage AB (pcs1_uab)</div>
+                    <div class="metric-value" id="pcs_ac_voltage_ab">--</div>
+                    <div class="metric-unit">V</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #FF9800;">
+                    <div class="metric-label">⚡ IGBT Temperature (pcs1_t_igbt)</div>
+                    <div class="metric-value" id="pcs_temp_igbt">--</div>
+                    <div class="metric-unit">°C</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #FF9800;">
+                    <div class="metric-label">⚡ Environment Temp (pcs1_t_env)</div>
+                    <div class="metric-value" id="pcs_temp_environment">--</div>
+                    <div class="metric-unit">°C</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM LAYER - Safety & Environment -->
+        <div class="dashboard-layer">
+            <div class="layer-header">
+                <div class="layer-title">🛡️ BOTTOM LAYER - Safety & Environmental</div>
+                <div class="layer-subtitle">Fire Detection, Cooling, Environmental → Safety View</div>
+            </div>
+            <div class="metrics-grid">
+                <!-- Thermal Management -->
+                <div class="metric-card" style="border-left: 4px solid #9C27B0;">
+                    <div class="metric-label">🌡️ Outside Temp (ac1_outside_t)</div>
+                    <div class="metric-value" id="aux_outside_temp">--</div>
+                    <div class="metric-unit">°C</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #9C27B0;">
+                    <div class="metric-label">🌡️ Water Temp (ac1_outwater_t)</div>
+                    <div class="metric-value" id="aux_outwater_temp">--</div>
+                    <div class="metric-unit">°C</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #9C27B0;">
+                    <div class="metric-label">💧 Water Pressure (ac1_rtnwater_pre)</div>
+                    <div class="metric-value" id="aux_return_water_pressure">--</div>
+                    <div class="metric-unit">bar</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #9C27B0;">
+                    <div class="metric-label">🔌 Aux Power (aux_m_ap)</div>
+                    <div class="metric-value" id="aux_power_apparent">--</div>
+                    <div class="metric-unit">kW</div>
+                </div>
+                
+                <!-- Environmental -->
+                <div class="metric-card" style="border-left: 4px solid #2196F3;">
+                    <div class="metric-label">🌡️ Humidity (dh1_humi)</div>
+                    <div class="metric-value" id="env_humidity">--</div>
+                    <div class="metric-unit">%</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #2196F3;">
+                    <div class="metric-label">🌡️ Env Temp (dh1_temp)</div>
+                    <div class="metric-value" id="env_temperature">--</div>
+                    <div class="metric-unit">°C</div>
+                </div>
+                
+                <!-- Safety - Fire Detection -->
+                <div class="metric-card" style="border-left: 4px solid #F44336;">
+                    <div class="metric-label">🚨 CO Level Zone 1 (fa1_co)</div>
+                    <div class="metric-value" id="safety_fire_co_1">--</div>
+                    <div class="metric-unit">ppm</div>
+                </div>
+                
+                <div class="metric-card" style="border-left: 4px solid #F44336;">
+                    <div class="metric-label">🚨 Smoke Zone 1 (fa1_smoke)</div>
+                    <div class="metric-value" id="safety_smoke_flag_1">--</div>
+                    <div class="metric-unit">flag</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alerts-section">
+            <h3>
+                <span class="status-indicator" id="statusIndicator"></span>
+                System Status: <span id="systemStatus">Unknown</span>
+            </h3>
+            <div id="alertsList"></div>
+        </div>
+        
+        <div class="timestamp" id="lastUpdate">Last update: --</div>
+        
+        <div class="logs">
+            <h4>Stream Log</h4>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let logCount = 0;
+        const maxLogs = 50;
+        
+        // SOC Chart initialization
+        let socChart;
+        let socHourlyData = new Map(); // Store hourly data points: key = "YYYY-MM-DD-HH", value = {time, soc, count, sum}
+        let socDisplayData = []; // Data for chart display
+        const maxDisplayDays = 31; // Show up to 31 days worth of hourly data
+        let currentDataDate = null;
+        
+        function initSOCChart() {
+            const ctx = document.getElementById('socChart').getContext('2d');
+            socChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'State of Charge (%)',
+                        data: [],
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'SOC (%)',
+                                color: 'white'
+                            },
+                            ticks: { color: 'white' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time (Day-Hour)',
+                                color: 'white'
+                            },
+                            ticks: { 
+                                color: 'white',
+                                maxTicksLimit: 12,
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    // Show every few hours to avoid crowding
+                                    return index % Math.max(1, Math.floor(values.length / 8)) === 0 ? label : '';
+                                }
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: 'white' }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateSOCChart(timestamp, socValue) {
+            if (socValue === null || socValue === undefined || socValue === '--') return;
+            
+            const dataTime = new Date(timestamp);
+            
+            // Create hourly key: "YYYY-MM-DD-HH"
+            const hourKey = `${dataTime.getFullYear()}-${String(dataTime.getMonth() + 1).padStart(2, '0')}-${String(dataTime.getDate()).padStart(2, '0')}-${String(dataTime.getHours()).padStart(2, '0')}`;
+            
+            // Track the current month/period
+            const currentPeriod = `${dataTime.getFullYear()}-${String(dataTime.getMonth() + 1).padStart(2, '0')}`;
+            
+            // Initialize or update hourly data
+            if (!socHourlyData.has(hourKey)) {
+                socHourlyData.set(hourKey, {
+                    time: dataTime,
+                    sum: parseFloat(socValue),
+                    count: 1,
+                    avgSoc: parseFloat(socValue)
+                });
+            } else {
+                const hourData = socHourlyData.get(hourKey);
+                hourData.sum += parseFloat(socValue);
+                hourData.count += 1;
+                hourData.avgSoc = hourData.sum / hourData.count;
+            }
+            
+            // Rebuild display data from hourly aggregates
+            updateChartDisplay();
+        }
+        
+        function updateChartDisplay() {
+            // Convert Map to sorted array
+            const sortedHours = Array.from(socHourlyData.entries())
+                .sort((a, b) => a[1].time - b[1].time)
+                .slice(-maxDisplayDays * 24); // Keep last maxDisplayDays worth of hours
+            
+            // Prepare data for chart
+            socDisplayData = sortedHours.map(([hourKey, data]) => {
+                const date = data.time;
+                const dayMonth = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+                const hour = String(date.getHours()).padStart(2, '0');
+                
+                return {
+                    label: `${dayMonth} ${hour}:00`,
+                    soc: Math.round(data.avgSoc * 10) / 10, // Round to 1 decimal
+                    fullTime: data.time
+                };
+            });
+            
+            // Update chart with compressed monthly data
+            socChart.data.labels = socDisplayData.map(d => d.label);
+            socChart.data.datasets[0].data = socDisplayData.map(d => d.soc);
+            socChart.update('none');
+            
+            // Update chart title with data info
+            updateChartTitle();
+        }
+        
+        function updateChartTitle() {
+            const titleElement = document.querySelector('.chart-title');
+            if (socDisplayData.length > 0) {
+                const firstTime = socDisplayData[0].fullTime;
+                const lastTime = socDisplayData[socDisplayData.length - 1].fullTime;
+                const daySpan = Math.ceil((lastTime - firstTime) / (1000 * 60 * 60 * 24));
+                const hourCount = socDisplayData.length;
+                
+                titleElement.textContent = `🔋 SOC Monthly Cycles - ${daySpan} days, ${hourCount} hours (${socHourlyData.size} hourly averages)`;
+            } else {
+                titleElement.textContent = '🔋 SOC Cycle Monitoring - Charge/Discharge Patterns';
+            }
+        }
+        
+        function resetSOCChart(newPeriod) {
+            // Clear data for new period
+            socHourlyData.clear();
+            socDisplayData = [];
+            
+            // Clear chart
+            socChart.data.labels = [];
+            socChart.data.datasets[0].data = [];
+            socChart.update('none');
+            
+            // Reset title
+            updateChartTitle();
+            
+            addLog(`🔄 SOC chart reset for new period: ${newPeriod}`);
+        }
+        
+        const connectionStatus = document.getElementById('connectionStatus');
+        const deviceSelect = document.getElementById('deviceSelect');
+        const dateSelect = document.getElementById('dateSelect');
+        const intervalInput = document.getElementById('intervalInput');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const logContainer = document.getElementById('logContainer');
+        
+        function updateMetric(elementId, value, precision = 1) {
+            const element = document.getElementById(elementId);
+            if (value !== null && value !== undefined) {
+                element.textContent = parseFloat(value).toFixed(precision);
+                element.classList.remove('no-data');
+            } else {
+                element.textContent = '--';
+                element.classList.add('no-data');
+            }
+        }
+        
+        function generateAlerts(data) {
+            const alerts = [];
+            
+            // BMS Alerts
+            if (data.bms_soc && data.bms_soc < 20) {
+                alerts.push({ level: 'warning', message: `Low Battery: SOC at ${data.bms_soc}%` });
+            }
+            if (data.bms_cell_avg_temp && data.bms_cell_avg_temp > 45) {
+                alerts.push({ level: 'warning', message: `High Cell Temperature: ${data.bms_cell_avg_temp}°C` });
+            }
+            
+            // PCS Alerts
+            if (data.pcs_temp_igbt && data.pcs_temp_igbt > 80) {
+                alerts.push({ level: 'critical', message: `Critical IGBT Temperature: ${data.pcs_temp_igbt}°C` });
+            }
+            
+            // Auxiliary System Alerts
+            if (data.aux_outside_temp && data.aux_outside_temp > 40) {
+                alerts.push({ level: 'warning', message: `High Outside Temperature: ${data.aux_outside_temp}°C` });
+            }
+            if (data.aux_return_water_pressure && data.aux_return_water_pressure < 1.5) {
+                alerts.push({ level: 'warning', message: `Low Water Pressure: ${data.aux_return_water_pressure} bar` });
+            }
+            
+            // Environmental Alerts
+            if (data.env_humidity && (data.env_humidity > 85 || data.env_humidity < 20)) {
+                alerts.push({ level: 'warning', message: `Humidity Out of Range: ${data.env_humidity}%` });
+            }
+            
+            // Safety Alerts
+            if (data.safety_fire_co_1 && data.safety_fire_co_1 > 50) {
+                alerts.push({ level: 'critical', message: `High CO Level Zone 1: ${data.safety_fire_co_1} ppm` });
+            }
+            if (data.safety_smoke_flag_1 && data.safety_smoke_flag_1 > 0) {
+                alerts.push({ level: 'critical', message: `Smoke Detected Zone 1` });
+            }
+            
+            return alerts;
+        }
+        
+        function displayAlerts(alerts) {
+            const alertsList = document.getElementById('alertsList');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const systemStatus = document.getElementById('systemStatus');
+            
+            if (alerts.length === 0) {
+                alertsList.innerHTML = '<div style="opacity: 0.7;">✅ All Systems Normal</div>';
+                statusIndicator.className = 'status-indicator status-normal';
+                systemStatus.textContent = 'Normal';
+                return;
+            }
+            
+            // Determine overall status
+            const hasCritical = alerts.some(a => a.level === 'critical');
+            const hasWarning = alerts.some(a => a.level === 'warning');
+            
+            if (hasCritical) {
+                statusIndicator.className = 'status-indicator status-critical';
+                systemStatus.textContent = 'Critical';
+            } else if (hasWarning) {
+                statusIndicator.className = 'status-indicator status-warning';
+                systemStatus.textContent = 'Warning';
+            }
+            
+            // Display alerts
+            alertsList.innerHTML = alerts.map(alert => {
+                const icon = alert.level === 'critical' ? '🚨' : '⚠️';
+                const bgColor = alert.level === 'critical' ? 'rgba(244, 67, 54, 0.2)' : 'rgba(255, 152, 0, 0.2)';
+                const borderColor = alert.level === 'critical' ? '#F44336' : '#FF9800';
+                
+                return `<div class="alert-item" style="background: ${bgColor}; border-left-color: ${borderColor}">${icon} ${alert.message}</div>`;
+            }).join('');
+        }
+        
+        function addLog(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+            
+            // Keep only recent logs
+            if (++logCount > maxLogs) {
+                logContainer.removeChild(logContainer.lastChild);
+                logCount--;
+            }
+        }
+        
+        function startStreaming() {
+            const deviceId = deviceSelect.value;
+            const targetDate = dateSelect.value;
+            const interval = intervalInput.value;
+            
+            if (!deviceId) {
+                alert('Please select a device');
+                return;
+            }
+            
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            let url = `http://localhost:8002/bess/${deviceId}/stream?interval=${interval}`;
+            if (targetDate) {
+                url += `&date=${targetDate}`;
+            }
+            
+            const dateInfo = targetDate ? ` (${targetDate})` : ' (auto period)';
+            addLog(`📅 Target date: ${targetDate || 'Auto - best overlapping period'}`);
+            
+            // Show data period info section
+            document.getElementById('dataPeriodInfo').style.display = 'block';
+            document.getElementById('targetPeriodInfo').textContent = 
+                `Target Period: ${targetDate || 'Auto-detect best overlapping period'}`;
+            document.getElementById('dataSourceInfo').textContent = 
+                `Device: ${deviceId} | Interval: ${interval}s`;
+            
+            // Reset SOC chart for new data period
+            if (targetDate && targetDate !== currentDataDate) {
+                resetSOCChart(targetDate);
+                currentDataDate = targetDate;
+            }
+            
+            eventSource = new EventSource(url);
+            
+            eventSource.onopen = function() {
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.className = 'connection-status connected';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                addLog(`Started streaming from ${deviceId}${dateInfo} (${interval}s interval)`);
+            };
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.error) {
+                        addLog(`Error: ${data.error}`, 'error');
+                        return;
+                    }
+                    
+                    // Update BMS metrics
+                    updateMetric('bms_soc', data.bms_soc, 1);
+                    
+                    // Update SOC chart with new data
+                    updateSOCChart(data.timestamp, data.bms_soc);
+                    updateMetric('bms_soh', data.bms_soh, 1);
+                    updateMetric('bms_voltage', data.bms_voltage, 2);
+                    updateMetric('bms_current', data.bms_current, 2);
+                    updateMetric('bms_cell_avg_temp', data.bms_cell_avg_temp, 1);
+                    
+                    // Update PCS metrics
+                    updateMetric('pcs_apparent_power', data.pcs_apparent_power, 2);
+                    updateMetric('pcs_dc_voltage', data.pcs_dc_voltage, 1);
+                    updateMetric('pcs_dc_current', data.pcs_dc_current, 1);
+                    updateMetric('pcs_ac_current_a', data.pcs_ac_current_a, 1);
+                    updateMetric('pcs_ac_voltage_ab', data.pcs_ac_voltage_ab, 1);
+                    updateMetric('pcs_temp_igbt', data.pcs_temp_igbt, 1);
+                    updateMetric('pcs_temp_environment', data.pcs_temp_environment, 1);
+                    
+                    // Update Auxiliary & Thermal metrics
+                    updateMetric('aux_outside_temp', data.aux_outside_temp, 1);
+                    updateMetric('aux_outwater_temp', data.aux_outwater_temp, 1);
+                    updateMetric('aux_return_water_pressure', data.aux_return_water_pressure, 2);
+                    updateMetric('aux_power_apparent', data.aux_power_apparent, 2);
+                    
+                    // Update Environmental & Safety metrics
+                    updateMetric('env_humidity', data.env_humidity, 1);
+                    updateMetric('env_temperature', data.env_temperature, 1);
+                    updateMetric('safety_fire_co_1', data.safety_fire_co_1, 0);
+                    updateMetric('safety_smoke_flag_1', data.safety_smoke_flag_1, 0);
+                    
+                    // Update timestamp display with both API and dashboard times
+                    const timestamp = new Date(data.timestamp);
+                    const dashboardTime = new Date();
+                    document.getElementById('lastUpdate').textContent = 
+                        `API Data: ${timestamp.toLocaleString()} | Dashboard: ${dashboardTime.toLocaleTimeString()}`;
+                    
+                    // Update the prominent current data time display
+                    document.getElementById('currentDataTime').textContent = 
+                        `📊 Processing Data from: ${timestamp.toLocaleString()}`;
+                    
+                    // Generate intelligent alerts based on all systems
+                    const alerts = generateAlerts(data);
+                    displayAlerts(alerts);
+                    
+                    // Log CORE BESS monitoring data with API timestamp
+                    const apiTimestamp = new Date(data.timestamp);
+                    const currentTime = new Date();
+                    addLog(`=== CORE BESS MONITORING DATA ===`);
+                    addLog(`📅 EXACT DATA DATE/TIME: ${apiTimestamp.toLocaleDateString()} at ${apiTimestamp.toLocaleTimeString()}`);
+                    addLog(`🕐 Dashboard received at: ${currentTime.toLocaleTimeString()}`);
+                    
+                    // 1) BMS - Key Performance Indicators & Safety
+                    const bmsCore = [];
+                    if (data.bms_soc !== null && data.bms_soc !== undefined) bmsCore.push(`SOC=${data.bms_soc}%`);
+                    if (data.bms_soh !== null && data.bms_soh !== undefined) bmsCore.push(`SOH=${data.bms_soh}%`);
+                    if (data.bms_voltage !== null && data.bms_voltage !== undefined) bmsCore.push(`PackV=${data.bms_voltage}V`);
+                    if (data.bms_current !== null && data.bms_current !== undefined) bmsCore.push(`PackI=${data.bms_current}A`);
+                    if (data.bms_cell_avg_temp !== null && data.bms_cell_avg_temp !== undefined) bmsCore.push(`CellT=${data.bms_cell_avg_temp}°C`);
+                    // Cell health diagnostics
+                    if (data.bms_cell_voltage_diff !== null && data.bms_cell_voltage_diff !== undefined) bmsCore.push(`VSpread=${data.bms_cell_voltage_diff}V`);
+                    if (data.bms_cell_temp_diff !== null && data.bms_cell_temp_diff !== undefined) bmsCore.push(`TSpread=${data.bms_cell_temp_diff}°C`);
+                    addLog(`🔋 BMS Core (${bmsCore.length}): ${bmsCore.join(', ') || 'No data'}`);
+                    
+                    // 2) PCS - AC/DC Conversion & Thermal Monitoring
+                    const pcsCore = [];
+                    if (data.pcs_apparent_power !== null && data.pcs_apparent_power !== undefined) pcsCore.push(`Power=${data.pcs_apparent_power}kW`);
+                    // DC side monitoring
+                    if (data.pcs_dc_current !== null && data.pcs_dc_current !== undefined) pcsCore.push(`DCI=${data.pcs_dc_current}A`);
+                    if (data.pcs_dc_voltage !== null && data.pcs_dc_voltage !== undefined) pcsCore.push(`DCV=${data.pcs_dc_voltage}V`);
+                    // AC side monitoring (phase A as representative)
+                    if (data.pcs_ac_current_a !== null && data.pcs_ac_current_a !== undefined) pcsCore.push(`ACI=${data.pcs_ac_current_a}A`);
+                    if (data.pcs_ac_voltage_ab !== null && data.pcs_ac_voltage_ab !== undefined) pcsCore.push(`ACV=${data.pcs_ac_voltage_ab}V`);
+                    // Thermal envelope tracking
+                    if (data.pcs_temp_igbt !== null && data.pcs_temp_igbt !== undefined) pcsCore.push(`IGBT=${data.pcs_temp_igbt}°C`);
+                    if (data.pcs_temp_environment !== null && data.pcs_temp_environment !== undefined) pcsCore.push(`Env=${data.pcs_temp_environment}°C`);
+                    addLog(`⚡ PCS Core (${pcsCore.length}): ${pcsCore.join(', ') || 'No data'}`);
+                    
+                    // 3) Environmental & Thermal - Essential monitoring only
+                    const envCore = [];
+                    if (data.aux_outside_temp !== null && data.aux_outside_temp !== undefined) envCore.push(`OutsideT=${data.aux_outside_temp}°C`);
+                    if (data.env_humidity !== null && data.env_humidity !== undefined) envCore.push(`Humidity=${data.env_humidity}%`);
+                    if (data.env_temperature !== null && data.env_temperature !== undefined) envCore.push(`AmbientT=${data.env_temperature}°C`);
+                    // Thermal system status (if available)
+                    if (data.aux_outwater_temp !== null && data.aux_outwater_temp !== undefined) envCore.push(`CoolantT=${data.aux_outwater_temp}°C`);
+                    addLog(`🌡️ Environment (${envCore.length}): ${envCore.join(', ') || 'No data'}`);
+                    
+                    
+                    // Core BESS monitoring summary - Essential metrics only
+                    const totalCore = bmsCore.length + pcsCore.length + envCore.length;
+                    addLog(`📊 CORE METRICS: ${totalCore} essential BESS indicators`);
+                    
+                    // Extract specific day information
+                    const dayOfWeek = apiTimestamp.toLocaleDateString('en-US', { weekday: 'long' });
+                    const monthName = apiTimestamp.toLocaleDateString('en-US', { month: 'long' });
+                    const dayNum = apiTimestamp.getDate();
+                    const year = apiTimestamp.getFullYear();
+                    
+                    addLog(`📅 DATA FROM: ${dayOfWeek}, ${monthName} ${dayNum}, ${year} at ${apiTimestamp.toLocaleTimeString()}`);
+                    addLog(`🕒 Dashboard processing at: ${currentTime.toLocaleTimeString()}`);
+                    addLog(`✅ FOCUSED: Battery health, AC/DC conversion, thermal envelope monitoring`);
+                    
+                } catch (e) {
+                    addLog(`Parse error: ${e.message}`, 'error');
+                }
+            };
+            
+            eventSource.onerror = function() {
+                connectionStatus.textContent = 'Connection Error';
+                connectionStatus.className = 'connection-status disconnected';
+                addLog('Connection error occurred', 'error');
+            };
+        }
+        
+        function stopStreaming() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            
+            connectionStatus.textContent = 'Disconnected';
+            connectionStatus.className = 'connection-status disconnected';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            // Hide data period info
+            document.getElementById('dataPeriodInfo').style.display = 'none';
+            
+            addLog('Stream stopped');
+        }
+        
+        // Auto-start with default device
+        window.addEventListener('load', function() {
+            deviceSelect.value = 'ZHPESS232A230002';
+            initSOCChart(); // Initialize the SOC chart
+            addLog('Dashboard loaded. Select device and click Start Stream');
+        });
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            stopStreaming();
+        });
+    </script>
+</body>
+</html>
